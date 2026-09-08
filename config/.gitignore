@@ -1,0 +1,5 @@
+# Keep private credentials and local settings out of Git.
+*
+!.gitignore
+!*.example
+!stations.json

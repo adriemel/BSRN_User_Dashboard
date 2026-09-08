@@ -1,0 +1,4 @@
+# Station data stays local; retain only folder instructions.
+*
+!.gitignore
+!README.txt
