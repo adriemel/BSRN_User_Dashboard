@@ -207,17 +207,27 @@ def selected_rows(data):
     return rows
 
 def qc_batch(rows):
+    import bsrn_qc
     from scripts.bsrn_qc_continue import generate_interactive_report
+    from scripts.bsrn_extra_plots import generate_extra_plots
     update(total=len(rows), done=0)
     for row in rows:
         try:
             path = safe_path(OUTPUT, row['dat'])
             folder = path.parent.parent / 'qc'
             folder.mkdir(exist_ok=True)
-            report = generate_interactive_report(path, folder)
+            parsed = bsrn_qc.parse_dat_file(path)
+            report = generate_interactive_report(path, folder, parsed_data=(parsed[0].copy(deep=True), copy.deepcopy(parsed[1])))
             with LOCK:
                 row['qc'] = str(report.relative_to(OUTPUT))
                 row['qc_error'] = ''
+                row['qc_plots'] = []
+                row['plot_warnings'] = []
+                save()
+            plots, warnings = generate_extra_plots(path, folder, parsed)
+            with LOCK:
+                row['qc_plots'] = [{'path': str(p['path'].relative_to(OUTPUT)), 'title': p['title']} for p in plots]
+                row['plot_warnings'] = warnings
         except Exception as exc:
             with LOCK:
                 row['qc_error'] = str(exc)
@@ -225,9 +235,10 @@ def qc_batch(rows):
             STATE['done'] += 1
             save()
     failed = sum(bool(r.get('qc_error')) for r in rows)
-    update(message=f'QC finished for {len(rows) - failed} of {len(rows)} files. Flags identify observations to review; they do not remove data.')
+    update(message=f'QC finished for {len(rows) - failed} of {len(rows)} files. Flags identify observations to review.')
 
 def export_batch(data, rows):
+    from scripts.bsrn_export_bundle import combine_radiation_exports
     records = set(data.get('records', []))
     if not records or not records <= EXPORT_RECORDS:
         raise ValueError('Select supported logical records.')
@@ -245,6 +256,7 @@ def export_batch(data, rows):
                 status = JobStatus(job=row['id'], dat_path=str(safe_path(OUTPUT, row['dat'])))
                 files, warnings = generate_data_exports_for_status(status, run)
                 chosen = [p for p in files if any('_LR' + r + '_' in p.name for r in records)]
+                chosen = combine_radiation_exports(chosen)
                 with LOCK:
                     row['warnings'] = warnings
                 for path in chosen:
@@ -264,7 +276,7 @@ def export_batch(data, rows):
                 STATE['done'] += 1
                 save()
         z.writestr('manifest.json', json.dumps(manifest, indent=2))
-        z.writestr('README.txt', 'BSRN user data exports\nCSV: comma separated. TSV: tab separated. UTF-8 encoding.\nSeparate tables per station-month and logical record. Column headers contain units where available.\nDate/Time follows the BSRN source time convention (UTC); minute 1440 becomes the next day at 00:00.\nMissing values are empty fields. Observations are not filtered by QC flags.\nRecords absent from a source file are listed in manifest.json. Unsupported records are not exported.\n')
+        z.writestr('README.txt', 'BSRN user data exports\nCSV: comma separated. TSV: tab separated. UTF-8 encoding.\nTables per station-month; LR0100 and LR0300 are combined when both are selected and available. Unmatched timestamps are retained with empty cells; repeated timestamps are paired in source order. Column headers contain units where available.\nDate/Time follows the BSRN source time convention (UTC); minute 1440 becomes the next day at 00:00.\nMissing values are empty fields. Observations are not filtered by QC flags.\nRecords absent from a source file are listed in manifest.json. Unsupported records are not exported.\n')
     count = sum(len(f['exported']) for f in manifest['files'])
     update(archive=str(bundle.relative_to(OUTPUT)), message=f"Exported {count} tables. {len(manifest['failures'])} file failures; see the included manifest.")
 
@@ -285,7 +297,7 @@ def start_action(action, data):
             work = lambda: export_batch(data, rows)
         else:
             raise ValueError('Unknown action')
-        update(busy=True, action=action, message='', done=0, total=0)
+        update(busy=True, action=action, message='', done=0, total=len(items) if action == 'load' else len(rows))
     def runner():
         try:
             work()

@@ -117,6 +117,19 @@ class UserWorkflowTests(unittest.TestCase):
                 with source.open(newline='', encoding='utf-8') as f:
                     self.assertEqual(table, list(csv.reader(f)))
                 self.assertFalse(json.loads(z.read('manifest.json'))['failures'])
+        # The real paired radiation records must form one table in both formats.
+        for fmt in ('csv', 'tsv'):
+            app.export_batch({'records': ['0100', '0300'], 'format': fmt}, rows)
+            with zipfile.ZipFile(app.safe_path(self.output, app.STATE['archive'])) as z:
+                tables = [n for n in z.namelist() if n.endswith('.' + fmt)]
+                self.assertEqual(len(tables), 1)
+                self.assertIn('_LR0100+0300_', tables[0])
+                combined = list(csv.DictReader(io.StringIO(z.read(tables[0]).decode()), delimiter=',' if fmt == 'csv' else '\t'))
+                self.assertEqual(len(combined), 43200)
+                for original in (p for p in generated if '_LR0100_' in p.name or '_LR0300_' in p.name):
+                    with original.open(newline='', encoding='utf-8') as f:
+                        expected = list(csv.DictReader(f))
+                    self.assertEqual([{k: r[k] for k in expected[0]} for r in combined], expected)
 
     def test_ftps_control_encrypts_login_without_data_tls(self):
         from unittest.mock import MagicMock

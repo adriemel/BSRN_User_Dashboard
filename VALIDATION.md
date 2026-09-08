@@ -22,3 +22,7 @@ This is a local first version. Tables remain separate by station-month and logic
 ## FTP follow-up
 
 The fully encrypted data channel repeatedly stalled, including with passive-mode and TLS-version variations and explicit session reuse. Encrypted login with clear public data transfer (`ftps-control`) successfully downloaded CAB May 2026 (1,909,905 compressed bytes; 12,866,165 DAT bytes) in 0.91 seconds, with gzip validation. The explicit mode is visible in Download options and retains certificate-verified encrypted login. No automatic fallback to plaintext login was added. A regression test verifies the login remains FTP_TLS and the plain FTP client is not used.
+
+## Combined exports and additional plots
+
+Eleven regression tests passed, including real TAT LR0100+0300 CSV and TSV exports checked cell-for-cell against the separate source tables, timestamp outer joins, duplicate preservation, and single-record selection. The additional plot gallery was verified on PAY January and February 2025: five figures each (daily panels, all-days overlay, LR0500, LR1200 and LR3010), without plot warnings. The solar loading indicator respects reduced-motion preferences.

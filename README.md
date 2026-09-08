@@ -24,17 +24,17 @@ Transfers run concurrently (1–4 workers, controlled by `download_workers`) whi
 
 Select a station-month, review minute coverage and format results, and generate QC plots for that file. **Run QC for all loaded files** processes the entire batch. A format warning remains visible but does not prevent attempting QC or export. A QC failure affects that file only.
 
-Interactive reports appear directly in the dashboard. They include radiation and flag plots, meteorology, scatter/ratio diagnostics, missing data, summaries and minima. The Plotly library is embedded so plots work offline. Station coordinates are shown without remote map tiles. LR4000 diagnostics remain available when present; LR4000 is not exported.
+Interactive reports appear directly in the dashboard. An **Additional plots** gallery offers the original daily SWD/SumSW panels, all-days overlay and available optional-record figures, with links to full-resolution PNGs. Re-run QC on older results to generate the gallery. A small animated sun accompanies batch progress and respects reduced-motion preferences. They include radiation and flag plots, meteorology, scatter/ratio diagnostics, missing data, summaries and minima. The Plotly library is embedded so plots work offline. Station coordinates are shown without remote map tiles. LR4000 diagnostics remain available when present; LR4000 is not exported.
 
 QC flags indicate observations to investigate, not automatic rejection. The report's overall flag percentage counts parameter-time entries, rather than distinct timestamps. Scientific thresholds and checks are inherited from the curator version.
 
 ## Export
 
-Select one or more loaded files, one or more available logical records, and CSV or tab-delimited TSV. A ZIP contains separate tables per station-month and logical record, plus a README and manifest describing source hashes, absent records and failures.
+Select one or more loaded files, one or more available logical records, and CSV or tab-delimited TSV. A ZIP contains tables per station-month, plus a README and manifest describing source hashes, absent records and failures. When both LR0100 and LR0300 are selected and available, they are exported as one `LR0100+0300` table matched on Date/Time. Times found in only one record are retained with empty cells for the other record; repeated timestamps are paired in source order. Selecting only one record still exports it individually.
 
 Supported records: **LR0100, LR0300, LR0500, LR1000, LR1100, LR1200, LR1300, LR3010, LR3030**. LR0001–LR0009 and LR4000 are excluded. Other unsupported data records are shown explicitly. Export does not require QC to finish and does not filter values based on QC flags.
 
-Exports retain the existing parser's readable headers and units. Missing values are empty cells; entirely empty columns may be omitted as in the original exporter. Different files may consequently have different columns. Timestamps use the source BSRN convention. Different logical records are not merged into one table. Multi-month merging is not implemented in this version.
+Exports retain the existing parser's readable headers and units. Missing values are empty cells; entirely empty columns may be omitted as in the original exporter. Different files may consequently have different columns. Timestamps use the source BSRN convention. Other logical records remain separate. Multi-month merging is not implemented in this version.
 
 ## Project layout
 
