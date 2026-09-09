@@ -32,6 +32,9 @@ os.environ.setdefault('MPLCONFIGDIR', str(ROOT / 'output/.matplotlib'))
 from scripts.bsrn_download_check import (Job, JobStatus, attach_minute_completeness,
     RemoteFileUnavailable, dat_blocks, download_job, load_config, read_dat_text, run_python_format_check)
 from scripts.bsrn_data_exports import EXPORT_RECORDS, generate_data_exports_for_status
+from scripts.bsrn_runtime import API_VERSION, source_version
+
+SERVER_VERSION = source_version(ROOT)
 
 OUTPUT = ROOT / 'output'
 TOKEN = secrets.token_urlsafe(32)
@@ -364,7 +367,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/state':
             return self.send(200, json.dumps(snapshot()))
         if path == '/api/config':
-            return self.send(200, json.dumps({'token': TOKEN, 'stations': stations(), 'records': LABELS,
+            return self.send(200, json.dumps({'token': TOKEN, 'api_version': API_VERSION, 'server_version': SERVER_VERSION,
+                'server_outdated': SERVER_VERSION != source_version(ROOT),
+                'stations': stations(), 'records': LABELS,
                 'inputs': sorted(str(p.relative_to(ROOT / 'input')) for p in (ROOT / 'input').rglob('*') if p.is_file() and p.suffix.lower() == '.dat'),
                 'ftp_mode': load_config(ROOT / 'config/bsrn_workflow.ini').get('ftp', 'protocol', fallback='ftps'),
                 'ftp_configured': (ROOT / 'config/bsrn_workflow.ini').is_file()}))
@@ -398,6 +403,15 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise ValueError('Expected an object')
             path = urlsplit(self.path).path
+            if path == '/api/shutdown':
+                with LOCK:
+                    if STATE['busy']:
+                        raise ValueError('A batch is running. Wait until it finishes before restarting.')
+                    # Prevent a new action from racing shutdown; persisted state stays intact.
+                    STATE['busy'] = True
+                self.send(200, json.dumps({'ok': True}))
+                threading.Thread(target=self.server.shutdown, daemon=True).start()
+                return
             if path not in ('/api/load', '/api/qc', '/api/export', '/api/reset'):
                 return self.send(404, json.dumps({'error': 'Unknown action'}))
             start_action(path.rsplit('/', 1)[-1], data)
@@ -414,7 +428,8 @@ def main():
         STATE.update(json.loads((OUTPUT / 'state.json').read_text(encoding='utf-8')))
         if STATE['busy']:
             STATE.update(busy=False, message='The previous action was interrupted. Completed results are retained; reload with reuse enabled or retry QC/export.')
-    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
+    with ThreadingHTTPServer((args.host, args.port), Handler) as server:
+        server.serve_forever()
 
 if __name__ == '__main__':
     main()

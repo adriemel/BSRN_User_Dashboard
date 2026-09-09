@@ -67,3 +67,9 @@ Use **New session** to clear the dashboard and file selections for FTP or local 
 Select **Export with QC flags (LR0100)** to append `SWDQc`, `DIRQc`, `DIFQc`, `LWDQc`, and `T2Qc` to LR0100 CSV or TSV data. When LR0300 is also selected and available, these columns stay in the combined LR0100+0300 table. LR0300 and other records receive no flag columns. Flags are computed from the full DAT file through the same calculation pipeline as the interactive report; generating plots first is optional. Plain exports and cached source tables remain unchanged.
 
 The ZIP includes `QC_FLAGS.txt`, explaining the bit values 1, 2, 4, 8, 16 and 32. Zero means no flags were raised by applicable checks, not that every check was possible. Missing observations and ambiguous parser alignments have empty flags; alignment warnings are recorded in `manifest.json`. Duplicate timestamps are paired in source order only when counts and values agree. Data values and rows are retained. Flagged table filenames end in `_with_QC`.
+
+### After pulling an update
+
+Double-click **Start-BSRN-User-Dashboard.cmd** after `git pull`, then refresh any existing browser tab. The launcher checks the running server against the code on disk and restarts an outdated idle server while preserving saved sessions, outputs and downloads. It waits for you to finish an active batch before applying an update. On Windows, older servers are identified by their listening port and exact dashboard script path before being stopped. On other systems, an older server without the shutdown API must be stopped manually once.
+
+Refreshing the page alone can otherwise display new controls backed by an older server. The page now detects this mismatch and shows restart instructions instead of allowing unsupported New session or QC export requests.
