@@ -1,13 +1,13 @@
 # BSRN User Dashboard
 
-A local dashboard for downloading BSRN station-month files, exploring scientific quality control, and exporting readable data. It is independent of the curator dashboard and does not check or update PANGAEA reference IDs or generate import files.
+A local dashboard for downloading BSRN station-month files, exploring scientific quality control, and exporting readable data. It is independent of the BSRN curator dashboard and does not check or update PANGAEA reference IDs or generate import files.
 
 ## Short instruction
 Clone the repo, change config/bsrn_workflow.ini.example to config/bsrn_workflow.ini and enter the login credentials you obtained from amelie.driemel@awi.de, then double click on **Start-BSRN-User-Dashboard.cmd** and start the work! :) Download station-to-archive files, QC them or export the data into tabular csv/tsv format.
 
 ## Start
 
-Double-click **Start-BSRN-User-Dashboard.cmd**. The dashboard opens at **http://127.0.0.1:8766**. The curator dashboard can continue using port 8765.
+Double-click **Start-BSRN-User-Dashboard.cmd**. The dashboard opens at **http://127.0.0.1:8766**. The BSRN curator dashboard is running on port 8765 and could theoretically be used in parallel.
 
 For a fresh checkout, install Python 3.10 or newer and run `python -m pip install -r requirements.txt` from this folder. Start with the Windows launcher or `python scripts/bsrn_launch_dashboard.py`. The launcher can also use a locally available Codex Python runtime and `.packages` directory; neither is included in the repository. Do not copy binary dependencies between different Python versions or operating systems; install requirements instead.
 
