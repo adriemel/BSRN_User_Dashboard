@@ -2,6 +2,9 @@
 
 A local dashboard for downloading BSRN station-month files, exploring scientific quality control, and exporting readable data. It is independent of the curator dashboard and does not check or update PANGAEA reference IDs or generate import files.
 
+## Short instruction
+Clone the repo, change config/bsrn_workflow.ini.example to config/bsrn_workflow.ini and enter the login credentials you obtained from amelie.driemel@awi.de, then double click on **Start-BSRN-User-Dashboard.cmd** and start the work! :) Download station-to-archive files, QC them or export the data into tabular csv/tsv format.
+
 ## Start
 
 Double-click **Start-BSRN-User-Dashboard.cmd**. The dashboard opens at **http://127.0.0.1:8766**. The curator dashboard can continue using port 8765.
