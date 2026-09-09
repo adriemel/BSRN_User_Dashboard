@@ -241,16 +241,22 @@ def qc_batch(rows):
 
 def export_batch(data, rows):
     from scripts.bsrn_export_bundle import combine_radiation_exports
+    from scripts.bsrn_qc_exports import QC_COLUMNS, QC_LEGEND, with_qc_flags
     records = set(data.get('records', []))
     if not records or not records <= EXPORT_RECORDS:
         raise ValueError('Select supported logical records.')
     fmt = data.get('format', 'csv')
     if fmt not in ('csv', 'tsv'):
         raise ValueError('Choose CSV or tab-delimited text.')
+    include_qc = data.get('include_qc', False)
+    if not isinstance(include_qc, bool):
+        raise ValueError('The QC export option must be true or false.')
+    if include_qc and '0100' not in records:
+        raise ValueError('Select LR0100 to export its QC flags.')
     update(total=len(rows), done=0, archive=None)
     run = safe_path(OUTPUT, STATE['run'])
     bundle = run / ('export-' + uuid.uuid4().hex[:8] + '.zip')
-    manifest = {'format': fmt, 'records': sorted(records), 'files': [], 'failures': [],
+    manifest = {'format': fmt, 'records': sorted(records), 'include_qc': include_qc, 'files': [], 'failures': [],
         'notes': 'Original parsed values; no QC filtering. LR0001–0009 and LR4000 excluded.'}
     with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as z:
         for row in rows:
@@ -258,6 +264,14 @@ def export_batch(data, rows):
                 status = JobStatus(job=row['id'], dat_path=str(safe_path(OUTPUT, row['dat'])))
                 files, warnings = generate_data_exports_for_status(status, run)
                 chosen = [p for p in files if any('_LR' + r + '_' in p.name for r in records)]
+                qc_columns = []
+                if include_qc:
+                    basic = next((p for p in chosen if '_LR0100_' in p.name), None)
+                    if basic is not None:
+                        flagged, qc_warnings = with_qc_flags(basic, Path(status.dat_path))
+                        warnings = [*warnings, *qc_warnings]
+                        chosen = [flagged if p == basic else p for p in chosen]
+                        qc_columns = QC_COLUMNS
                 chosen = combine_radiation_exports(chosen)
                 with LOCK:
                     row['warnings'] = warnings
@@ -271,12 +285,15 @@ def export_batch(data, rows):
                         z.write(dest, dest.name)
                 manifest['files'].append({'job': row['id'], 'source': row['source'],
                     'sha256': digest(status.dat_path), 'exported': [p.with_suffix('.' + fmt).name for p in chosen],
-                    'absent_records': sorted(records - set(row['records'])), 'warnings': warnings})
+                    'absent_records': sorted(records - set(row['records'])), 'warnings': warnings,
+                    'qc_columns': qc_columns})
             except Exception as exc:
                 manifest['failures'].append({'job': row['id'], 'error': str(exc)})
             with LOCK:
                 STATE['done'] += 1
                 save()
+        if include_qc:
+            z.writestr('QC_FLAGS.txt', QC_LEGEND)
         z.writestr('manifest.json', json.dumps(manifest, indent=2))
         z.writestr('README.txt', 'BSRN user data exports\nCSV: comma separated. TSV: tab separated. UTF-8 encoding.\nTables per station-month; LR0100 and LR0300 are combined when both are selected and available. Unmatched timestamps are retained with empty cells; repeated timestamps are paired in source order. Column headers contain units where available.\nDate/Time follows the BSRN source time convention (UTC); minute 1440 becomes the next day at 00:00.\nMissing values are empty fields. Observations are not filtered by QC flags.\nRecords absent from a source file are listed in manifest.json. Unsupported records are not exported.\n')
     count = sum(len(f['exported']) for f in manifest['files'])
@@ -307,6 +324,10 @@ def start_action(action, data):
             rows = selected_rows(data)
             if data.get('format') not in ('csv', 'tsv') or not data.get('records') or not set(data['records']) <= EXPORT_RECORDS:
                 raise ValueError('Select logical records and CSV or tab-delimited text.')
+            if not isinstance(data.get('include_qc', False), bool):
+                raise ValueError('The QC export option must be true or false.')
+            if data.get('include_qc') and '0100' not in data['records']:
+                raise ValueError('Select LR0100 to export its QC flags.')
             work = lambda: export_batch(data, rows)
         else:
             raise ValueError('Unknown action')

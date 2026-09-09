@@ -61,3 +61,9 @@ Derived from the existing BSRN Dashboard; original license retained. Changes in 
 ### Session controls
 
 Use **New session** to clear the dashboard and file selections for FTP or local input. Saved output files and verified download cache entries are retained. This control is disabled during active work. Unavailable and failed files appear in their own panel, with a link to the BSRN availability portal. Only explicit missing-file responses are classified as unavailable; other errors retain their details. The header links to the WRMC Curator. Bulk QC processes pending or failed jobs and disables when all loaded files have completed successfully; individual QC reports can still be regenerated.
+
+### Export with QC flags
+
+Select **Export with QC flags (LR0100)** to append `SWDQc`, `DIRQc`, `DIFQc`, `LWDQc`, and `T2Qc` to LR0100 CSV or TSV data. When LR0300 is also selected and available, these columns stay in the combined LR0100+0300 table. LR0300 and other records receive no flag columns. Flags are computed from the full DAT file through the same calculation pipeline as the interactive report; generating plots first is optional. Plain exports and cached source tables remain unchanged.
+
+The ZIP includes `QC_FLAGS.txt`, explaining the bit values 1, 2, 4, 8, 16 and 32. Zero means no flags were raised by applicable checks, not that every check was possible. Missing observations and ambiguous parser alignments have empty flags; alignment warnings are recorded in `manifest.json`. Duplicate timestamps are paired in source order only when counts and values agree. Data values and rows are retained. Flagged table filenames end in `_with_QC`.

@@ -4,13 +4,20 @@ import datetime as dt
 from pathlib import Path
 LR0500_UV_B_MILLIWATT_STATIONS = {'BON', 'BOS', 'DRA', 'FPE', 'GCR', 'MAN', 'NAU', 'PAY', 'PSU', 'SXF', 'TOR'}
 
-def generate_interactive_report(dat_path: Path, qc_root: Path, *, parsed_data=None) -> Path:
+def prepare_qc_data(dat_path: Path, *, parsed_data=None):
+    """One calculation pipeline shared by the interactive report and exports."""
     import bsrn_qc
-    from interactive_report import generate_interactive_report as write_interactive_report
     df, metadata = bsrn_qc.parse_dat_file(dat_path) if parsed_data is None else parsed_data
     df = bsrn_qc.compute_solar_auxiliary(df, metadata['latitude'], metadata['longitude'])
     lr4000_report = bsrn_qc.check_lr4000(df, metadata)
     df = bsrn_qc.run_qc_checks(df)
+    return df, metadata, lr4000_report
+
+
+def generate_interactive_report(dat_path: Path, qc_root: Path, *, parsed_data=None) -> Path:
+    import bsrn_qc
+    from interactive_report import generate_interactive_report as write_interactive_report
+    df, metadata, lr4000_report = prepare_qc_data(dat_path, parsed_data=parsed_data)
     qc_summary = bsrn_qc.summarize_qc_flags(df)
     report_path = qc_root / f"{metadata['station_code']}_{metadata['year']}-{metadata['month']:02d}_QC_report_interactive.html"
     write_interactive_report(df, metadata, qc_summary, report_path, lr4000_report)
