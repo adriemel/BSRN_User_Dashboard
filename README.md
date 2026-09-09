@@ -1,6 +1,7 @@
 # BSRN User Dashboard
 
 A local dashboard for downloading BSRN station-month files, exploring scientific quality control, and exporting readable data. It is independent of the BSRN curator dashboard and does not check or update PANGAEA reference IDs or generate import files.
+Note that mass download of station-to-archive files with this Dashboard will take a while, so if you want to work with a lot of files you might want to download them separately and then use the "input" folder of the BSRN User Dashboard to load the files.
 
 ## Short instruction
 Clone the repo, change config/bsrn_workflow.ini.example to config/bsrn_workflow.ini and enter the login credentials you obtained from amelie.driemel@awi.de, then double click on **Start-BSRN-User-Dashboard.cmd** and start the work! :) Download station-to-archive files, QC them or export the data into tabular csv/tsv format.
