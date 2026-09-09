@@ -18,7 +18,7 @@ FTP credentials belong in `config/bsrn_workflow.ini`; use the adjacent example f
 
 **Connection mode:** the example configuration uses `protocol = ftps-control`: authentication and commands are encrypted and the public station data payload is unencrypted. This avoids the encrypted-data-channel stall reproduced on this connection. Use `protocol = ftps` for encryption of both login and data where the network/server supports it. There is no automatic downgrade between modes.
 
-Transfers run concurrently (1–4 workers, controlled by `download_workers`) while completed files are checked. Failed transfers retry up to three times. **Reuse verified local downloads** avoids transfers when the local DAT still matches its stored SHA-256 checksum. Leave reuse off to retrieve upstream corrections. Reuse verifies local integrity; it does not check whether the FTP copy has changed. After an interruption, reload the same selection with reuse enabled; completed cached transfers are retained.
+Transfers run one at a time with at least five seconds between the end of a network attempt and the next connection, including retries and successive batches. Increase this pause with `download_delay_seconds` in the FTP configuration; values below five seconds are clamped to five. Older `download_workers` settings are ignored. Failed transfers get up to three attempts total. **Reuse verified local downloads** avoids transfers and the network pause when the local DAT still matches its stored SHA-256 checksum. Leave reuse off to retrieve upstream corrections. Reuse verifies local integrity; it does not check whether the FTP copy has changed. After an interruption, reload the same selection with reuse enabled; completed cached transfers are retained.
 
 ## Explore & QC
 

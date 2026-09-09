@@ -5,7 +5,8 @@ remote_root = /
 user = YOUR_BSRN_USERNAME
 password = YOUR_BSRN_PASSWORD
 timeout_seconds = 120
-download_workers = 3
+download_delay_seconds = 5
 
 # BSRN_FTP_USER and BSRN_FTP_PASSWORD override these credentials.
-# Keep the real bsrn_workflow.ini private. Workers are bounded to 1–4.
+# Keep the real bsrn_workflow.ini private. Downloads always run one at a time.
+# The delay between attempts is at least 5 seconds, including retries.

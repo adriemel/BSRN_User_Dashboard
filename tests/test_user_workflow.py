@@ -26,8 +26,11 @@ class UserWorkflowTests(unittest.TestCase):
         self.out_patch.start()
         self.state_patch = patch.object(app, 'STATE', {'busy': False, 'rows': [], 'run': '', 'archive': None})
         self.state_patch.start()
+        self.cooldown_patch = patch.object(app, '_LAST_DOWNLOAD_FINISHED', None)
+        self.cooldown_patch.start()
 
     def tearDown(self):
+        self.cooldown_patch.stop()
         self.state_patch.stop()
         self.out_patch.stop()
         self.temp.cleanup()
@@ -63,18 +66,40 @@ class UserWorkflowTests(unittest.TestCase):
             app.fetch(job, configparser.ConfigParser(), False)
             self.assertEqual(len(calls), 4)
 
+    def test_download_cooldown_retries_next_file_and_cache(self):
+        cfg = configparser.ConfigParser()
+        cfg['ftp'] = {'download_delay_seconds': '1'}
+        calls = []
+        def download(job, config, folder):
+            calls.append(job)
+            if len(calls) == 1:
+                raise OSError('503 busy')
+            path = folder / job.gz_name
+            path.write_bytes(gzip.compress(b'data'))
+            return path
+        with patch.object(app, 'download_job', side_effect=download), \
+                patch.object(app.time, 'monotonic', return_value=100), \
+                patch.object(app.time, 'sleep') as sleep:
+            job = Job('TAT', 2026, 1)
+            app.fetch(job, cfg, False)
+            sleep.assert_called_once_with(5.0)
+            app.fetch(job, cfg, True)
+            self.assertEqual(sleep.call_count, 1)
+            app.fetch(Job('TAT', 2026, 2), cfg, False)
+            self.assertEqual(sleep.call_count, 2)
+            cfg['ftp']['download_delay_seconds'] = '10'
+            app.fetch(Job('TAT', 2026, 3), cfg, False)
+            sleep.assert_called_with(10.0)
+
     def test_download_queue_continues_and_isolates_failure(self):
         active = peak = 0
         lock = threading.Lock()
-        barrier = threading.Barrier(2)
         def fake(job, cfg, reuse):
             nonlocal active, peak
             with lock:
                 active += 1
                 peak = max(peak, active)
             try:
-                if job.month in (1, 2):
-                    barrier.wait(5)
                 if job.month == 2:
                     raise OSError('missing month')
                 return Path(job.dat_name), False
@@ -87,7 +112,7 @@ class UserWorkflowTests(unittest.TestCase):
         cfg['ftp'] = {'download_workers': '2'}
         with patch.object(app, 'fetch', side_effect=fake), patch.object(app, 'inspect_file', side_effect=inspect), patch.object(app, 'load_config', return_value=cfg):
             app.load_batch({'source': 'ftp'}, [Job('TAT', 2026, n) for n in range(1, 5)])
-        self.assertEqual(peak, 2)
+        self.assertEqual(peak, 1)
         self.assertEqual(len(app.STATE['rows']), 4)
         self.assertEqual(sum(bool(r['error']) for r in app.STATE['rows']), 1)
 

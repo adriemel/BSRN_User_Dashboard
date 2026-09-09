@@ -36,6 +36,8 @@ from scripts.bsrn_data_exports import EXPORT_RECORDS, generate_data_exports_for_
 OUTPUT = ROOT / 'output'
 TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.RLock()
+DOWNLOAD_LOCK = threading.Lock()
+_LAST_DOWNLOAD_FINISHED = None
 STATE = {'busy': False, 'action': '', 'done': 0, 'total': 0, 'rows': [], 'message': '', 'run': '', 'archive': None}
 LABELS = {'0100': 'Basic radiation & meteorology', '0300': 'Upward radiation',
     '0500': 'Ultraviolet', '1000': 'SYNOP', '1100': 'Radiosonde', '1200': 'Ozone',
@@ -106,6 +108,7 @@ def validate_load(data):
     return jobs
 
 def fetch(job, cfg, reuse):
+    global _LAST_DOWNLOAD_FINISHED
     cache = OUTPUT / 'download_cache'
     cache.mkdir(parents=True, exist_ok=True)
     target = cache / job.dat_name
@@ -115,7 +118,17 @@ def fetch(job, cfg, reuse):
     error = None
     for attempt in range(3):
         try:
-            gz = download_job(job, cfg, cache)
+            # Share the cooldown across files, retries, and successive batches.
+            with DOWNLOAD_LOCK:
+                delay = max(5.0, cfg.getfloat('ftp', 'download_delay_seconds', fallback=5.0))
+                if _LAST_DOWNLOAD_FINISHED is not None:
+                    remaining = delay - (time.monotonic() - _LAST_DOWNLOAD_FINISHED)
+                    if remaining > 0:
+                        time.sleep(remaining)
+                try:
+                    gz = download_job(job, cfg, cache)
+                finally:
+                    _LAST_DOWNLOAD_FINISHED = time.monotonic()
             temporary = cache / (job.dat_name + '.partial')
             with gzip.open(gz, 'rb') as src, temporary.open('wb') as dest:
                 shutil.copyfileobj(src, dest)
@@ -125,8 +138,6 @@ def fetch(job, cfg, reuse):
             return target, False
         except Exception as exc:
             error = exc
-            if attempt < 2:
-                time.sleep(attempt + 1)
     raise ValueError(f'{job.base}: download failed after 3 attempts. {error}')
 
 def inspect_file(path, run, source, reused=False):
@@ -183,9 +194,9 @@ def load_batch(data, items):
             collect(item)
     else:
         cfg = load_config(ROOT / 'config/bsrn_workflow.ini')
-        workers = max(1, min(4, cfg.getint('ftp', 'download_workers', fallback=3)))
-        # Transfers continue while the coordinator checks completed files.
-        with ThreadPoolExecutor(max_workers=workers) as pool:
+        # One transfer at a time, even with an older download_workers setting.
+        # The coordinator can still inspect files while the next transfer waits.
+        with ThreadPoolExecutor(max_workers=1) as pool:
             pending = {pool.submit(fetch, job, cfg, bool(data.get('reuse'))): job for job in items}
             for future in as_completed(pending):
                 try:
