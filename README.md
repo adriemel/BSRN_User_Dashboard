@@ -22,7 +22,7 @@ FTP credentials belong in `config/bsrn_workflow.ini`; use the adjacent example f
 
 **Connection mode:** the example configuration uses `protocol = ftps-control`: authentication and commands are encrypted and the public station data payload is unencrypted. This avoids the encrypted-data-channel stall reproduced on this connection. Use `protocol = ftps` for encryption of both login and data where the network/server supports it. There is no automatic downgrade between modes.
 
-Transfers run one at a time with at least five seconds between the end of a network attempt and the next connection, including retries and successive batches. Increase this pause with `download_delay_seconds` in the FTP configuration; values below five seconds are clamped to five. Older `download_workers` settings are ignored. Failed transfers get up to three attempts total. **Reuse verified local downloads** avoids transfers and the network pause when the local DAT still matches its stored SHA-256 checksum. Leave reuse off to retrieve upstream corrections. Reuse verifies local integrity; it does not check whether the FTP copy has changed. After an interruption, reload the same selection with reuse enabled; completed cached transfers are retained.
+Transfers run concurrently (1–4 workers, controlled by `download_workers`) while completed files are checked. Failed transfers get up to three attempts total; confirmed unavailable files are not retried. **Reuse verified local downloads** avoids transfers when the local DAT still matches its stored SHA-256 checksum. Leave reuse off to retrieve upstream corrections. Reuse verifies local integrity; it does not check whether the FTP copy has changed. After an interruption, reload the same selection with reuse enabled; completed cached transfers are retained.
 
 ## Explore & QC
 
@@ -57,3 +57,7 @@ The server binds to localhost, checks Host/Origin and a per-process request toke
 Run `python -B -m unittest discover -s tests -v` from this folder. The real-data integration test uses `input/tat0426.dat` when available; other tests use controlled fixtures. See `VALIDATION.md` for the implementation-time checks.
 
 Derived from the existing BSRN Dashboard; original license retained. Changes in this separate copy do not automatically propagate to the curator project.
+
+### Session controls
+
+Use **New session** to clear the dashboard and file selections for FTP or local input. Saved output files and verified download cache entries are retained. This control is disabled during active work. Unavailable and failed files appear in their own panel, with a link to the BSRN availability portal. Only explicit missing-file responses are classified as unavailable; other errors retain their details. The header links to the WRMC Curator. Bulk QC processes pending or failed jobs and disables when all loaded files have completed successfully; individual QC reports can still be regenerated.

@@ -30,14 +30,12 @@ if (ROOT / '.packages').is_dir():
 sys.path.insert(0, str(ROOT / 'tools/qc-graphs'))
 os.environ.setdefault('MPLCONFIGDIR', str(ROOT / 'output/.matplotlib'))
 from scripts.bsrn_download_check import (Job, JobStatus, attach_minute_completeness,
-    dat_blocks, download_job, load_config, read_dat_text, run_python_format_check)
+    RemoteFileUnavailable, dat_blocks, download_job, load_config, read_dat_text, run_python_format_check)
 from scripts.bsrn_data_exports import EXPORT_RECORDS, generate_data_exports_for_status
 
 OUTPUT = ROOT / 'output'
 TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.RLock()
-DOWNLOAD_LOCK = threading.Lock()
-_LAST_DOWNLOAD_FINISHED = None
 STATE = {'busy': False, 'action': '', 'done': 0, 'total': 0, 'rows': [], 'message': '', 'run': '', 'archive': None}
 LABELS = {'0100': 'Basic radiation & meteorology', '0300': 'Upward radiation',
     '0500': 'Ultraviolet', '1000': 'SYNOP', '1100': 'Radiosonde', '1200': 'Ozone',
@@ -108,7 +106,6 @@ def validate_load(data):
     return jobs
 
 def fetch(job, cfg, reuse):
-    global _LAST_DOWNLOAD_FINISHED
     cache = OUTPUT / 'download_cache'
     cache.mkdir(parents=True, exist_ok=True)
     target = cache / job.dat_name
@@ -118,17 +115,7 @@ def fetch(job, cfg, reuse):
     error = None
     for attempt in range(3):
         try:
-            # Share the cooldown across files, retries, and successive batches.
-            with DOWNLOAD_LOCK:
-                delay = max(5.0, cfg.getfloat('ftp', 'download_delay_seconds', fallback=5.0))
-                if _LAST_DOWNLOAD_FINISHED is not None:
-                    remaining = delay - (time.monotonic() - _LAST_DOWNLOAD_FINISHED)
-                    if remaining > 0:
-                        time.sleep(remaining)
-                try:
-                    gz = download_job(job, cfg, cache)
-                finally:
-                    _LAST_DOWNLOAD_FINISHED = time.monotonic()
+            gz = download_job(job, cfg, cache)
             temporary = cache / (job.dat_name + '.partial')
             with gzip.open(gz, 'rb') as src, temporary.open('wb') as dest:
                 shutil.copyfileobj(src, dest)
@@ -136,8 +123,12 @@ def fetch(job, cfg, reuse):
             checksum.write_text(digest(target))
             gz.unlink(missing_ok=True)
             return target, False
+        except RemoteFileUnavailable:
+            raise
         except Exception as exc:
             error = exc
+            if attempt < 2:
+                time.sleep(attempt + 1)
     raise ValueError(f'{job.base}: download failed after 3 attempts. {error}')
 
 def inspect_file(path, run, source, reused=False):
@@ -184,7 +175,7 @@ def load_batch(data, items):
             if isinstance(item, Job) and row['id'] != item.label:
                 raise ValueError(f'{item.label}: downloaded file identifies itself as {row["id"]}.')
         except Exception as exc:
-            row = {'id': label, 'error': str(exc), 'records': [], 'qc': None, 'warnings': []}
+            row = {'id': label, 'error': str(exc), 'unavailable': isinstance(exc, RemoteFileUnavailable), 'records': [], 'qc': None, 'warnings': []}
         with LOCK:
             STATE['rows'].append(row)
             STATE['done'] += 1
@@ -194,9 +185,9 @@ def load_batch(data, items):
             collect(item)
     else:
         cfg = load_config(ROOT / 'config/bsrn_workflow.ini')
-        # One transfer at a time, even with an older download_workers setting.
-        # The coordinator can still inspect files while the next transfer waits.
-        with ThreadPoolExecutor(max_workers=1) as pool:
+        workers = max(1, min(4, cfg.getint('ftp', 'download_workers', fallback=3)))
+        # Transfers continue while the coordinator checks completed files.
+        with ThreadPoolExecutor(max_workers=workers) as pool:
             pending = {pool.submit(fetch, job, cfg, bool(data.get('reuse'))): job for job in items}
             for future in as_completed(pending):
                 try:
@@ -295,11 +286,22 @@ def start_action(action, data):
     with LOCK:
         if STATE['busy']:
             raise ValueError('A batch is already running. Please wait until it finishes.')
+        if action == 'reset':
+            run = OUTPUT / 'runs' / (time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:8])
+            run.mkdir(parents=True)
+            update(busy=False, action='', done=0, total=0, rows=[], archive=None,
+                   run=str(run.relative_to(OUTPUT)), message='New session. Choose FTP or local files to begin.')
+            return
         if action == 'load':
             items = validate_load(data)
             work = lambda: load_batch(data, items)
         elif action == 'qc':
             rows = selected_rows(data)
+            if data.get('pending_only'):
+                rows = [row for row in rows if not row.get('qc') or row.get('qc_error')]
+                if not rows:
+                    update(message='QC is complete for all loaded files.')
+                    return
             work = lambda: qc_batch(rows)
         elif action == 'export':
             rows = selected_rows(data)
@@ -375,7 +377,7 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise ValueError('Expected an object')
             path = urlsplit(self.path).path
-            if path not in ('/api/load', '/api/qc', '/api/export'):
+            if path not in ('/api/load', '/api/qc', '/api/export', '/api/reset'):
                 return self.send(404, json.dumps({'error': 'Unknown action'}))
             start_action(path.rsplit('/', 1)[-1], data)
             self.send(202, json.dumps({'ok': True}))

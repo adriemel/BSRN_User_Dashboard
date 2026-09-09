@@ -26,14 +26,63 @@ class UserWorkflowTests(unittest.TestCase):
         self.out_patch.start()
         self.state_patch = patch.object(app, 'STATE', {'busy': False, 'rows': [], 'run': '', 'archive': None})
         self.state_patch.start()
-        self.cooldown_patch = patch.object(app, '_LAST_DOWNLOAD_FINISHED', None)
-        self.cooldown_patch.start()
 
     def tearDown(self):
-        self.cooldown_patch.stop()
         self.state_patch.stop()
         self.out_patch.stop()
         self.temp.cleanup()
+
+    def test_new_session_preserves_files_and_rejects_reset_while_busy(self):
+        previous = self.output / 'runs' / 'previous'
+        previous.mkdir(parents=True)
+        artifact = previous / 'data.csv'
+        artifact.write_text('saved data')
+        cache = self.output / 'download_cache'
+        cache.mkdir()
+        cached = cache / 'file.dat'
+        cached.write_text('cached data')
+        app.STATE.update(rows=[{'id': 'old'}], archive='old.zip', run='runs/previous', busy=True)
+        with self.assertRaises(ValueError):
+            app.start_action('reset', {})
+        self.assertEqual(app.STATE['rows'], [{'id': 'old'}])
+        app.STATE['busy'] = False
+        app.start_action('reset', {})
+        self.assertEqual(app.STATE['rows'], [])
+        self.assertIsNone(app.STATE['archive'])
+        self.assertTrue((self.output / app.STATE['run']).is_dir())
+        self.assertNotEqual(app.STATE['run'], 'runs/previous')
+        self.assertEqual(artifact.read_text(), 'saved data')
+        self.assertEqual(cached.read_text(), 'cached data')
+        self.assertEqual(json.loads((self.output / 'state.json').read_text())['rows'], [])
+
+    def test_bulk_qc_skips_successful_files_but_retries_failures(self):
+        app.STATE['rows'] = [
+            {'id': 'done', 'dat': 'a.dat', 'qc': 'report.html'},
+            {'id': 'failed', 'dat': 'b.dat', 'qc': 'old.html', 'qc_error': 'failed'},
+            {'id': 'pending', 'dat': 'c.dat', 'qc': None}]
+        with patch.object(app.threading, 'Thread') as thread, patch.object(app, 'qc_batch') as qc:
+            app.start_action('qc', {'jobs': ['done', 'failed', 'pending'], 'pending_only': True})
+            thread.call_args.kwargs['target']()
+            self.assertEqual([r['id'] for r in qc.call_args.args[0]], ['failed', 'pending'])
+        with patch.object(app.threading, 'Thread') as thread:
+            app.start_action('qc', {'jobs': ['done'], 'pending_only': True})
+            thread.assert_not_called()
+        with patch.object(app.threading, 'Thread') as thread, patch.object(app, 'qc_batch') as qc:
+            app.start_action('qc', {'jobs': ['done']})
+            thread.call_args.kwargs['target']()
+            self.assertEqual(qc.call_args.args[0][0]['id'], 'done')
+
+    def test_missing_remote_file_is_not_retried_and_is_classified(self):
+        job = Job('TAT', 2026, 1)
+        with patch.object(app, 'download_job', side_effect=app.RemoteFileUnavailable('not found')) as download:
+            with self.assertRaises(app.RemoteFileUnavailable):
+                app.fetch(job, configparser.ConfigParser(), False)
+            download.assert_called_once()
+        with patch.object(app, 'fetch', side_effect=[app.RemoteFileUnavailable('not found'), OSError('connection failed')]):
+            app.load_batch({'source': 'ftp'}, [job, Job('TAT', 2026, 2)])
+        by_id = {row['id']: row for row in app.STATE['rows']}
+        self.assertTrue(by_id[job.label]['unavailable'])
+        self.assertFalse(by_id['TAT_2026-02']['unavailable'])
 
     def test_validation_and_path_confinement(self):
         with self.assertRaises(ValueError):
@@ -66,40 +115,18 @@ class UserWorkflowTests(unittest.TestCase):
             app.fetch(job, configparser.ConfigParser(), False)
             self.assertEqual(len(calls), 4)
 
-    def test_download_cooldown_retries_next_file_and_cache(self):
-        cfg = configparser.ConfigParser()
-        cfg['ftp'] = {'download_delay_seconds': '1'}
-        calls = []
-        def download(job, config, folder):
-            calls.append(job)
-            if len(calls) == 1:
-                raise OSError('503 busy')
-            path = folder / job.gz_name
-            path.write_bytes(gzip.compress(b'data'))
-            return path
-        with patch.object(app, 'download_job', side_effect=download), \
-                patch.object(app.time, 'monotonic', return_value=100), \
-                patch.object(app.time, 'sleep') as sleep:
-            job = Job('TAT', 2026, 1)
-            app.fetch(job, cfg, False)
-            sleep.assert_called_once_with(5.0)
-            app.fetch(job, cfg, True)
-            self.assertEqual(sleep.call_count, 1)
-            app.fetch(Job('TAT', 2026, 2), cfg, False)
-            self.assertEqual(sleep.call_count, 2)
-            cfg['ftp']['download_delay_seconds'] = '10'
-            app.fetch(Job('TAT', 2026, 3), cfg, False)
-            sleep.assert_called_with(10.0)
-
     def test_download_queue_continues_and_isolates_failure(self):
         active = peak = 0
         lock = threading.Lock()
+        barrier = threading.Barrier(2)
         def fake(job, cfg, reuse):
             nonlocal active, peak
             with lock:
                 active += 1
                 peak = max(peak, active)
             try:
+                if job.month in (1, 2):
+                    barrier.wait(5)
                 if job.month == 2:
                     raise OSError('missing month')
                 return Path(job.dat_name), False
@@ -112,7 +139,7 @@ class UserWorkflowTests(unittest.TestCase):
         cfg['ftp'] = {'download_workers': '2'}
         with patch.object(app, 'fetch', side_effect=fake), patch.object(app, 'inspect_file', side_effect=inspect), patch.object(app, 'load_config', return_value=cfg):
             app.load_batch({'source': 'ftp'}, [Job('TAT', 2026, n) for n in range(1, 5)])
-        self.assertEqual(peak, 1)
+        self.assertEqual(peak, 2)
         self.assertEqual(len(app.STATE['rows']), 4)
         self.assertEqual(sum(bool(r['error']) for r in app.STATE['rows']), 1)
 

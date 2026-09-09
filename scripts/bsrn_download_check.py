@@ -44,6 +44,11 @@ class JobStatus:
 class WorkflowError(Exception):
     pass
 
+class RemoteFileUnavailable(WorkflowError):
+    """The transfer server explicitly reported a missing remote file."""
+    pass
+
+
 def load_config(path: Path) -> configparser.ConfigParser:
     cfg = configparser.ConfigParser()
     if path.exists():
@@ -89,6 +94,8 @@ def download_job(job: Job, cfg: configparser.ConfigParser, download_dir: Path) -
             if proc.returncode != 0:
                 if local_path.exists():
                     local_path.unlink()
+                if proc.returncode == 78:
+                    raise RemoteFileUnavailable(f'{job.gz_name}: remote file unavailable.')
                 raise WorkflowError(f'FTPS download failed for {job.gz_name}: {proc.stderr.strip() or proc.stdout.strip()}')
             return local_path
         ftp_class = ftplib.FTP_TLS
@@ -107,7 +114,12 @@ def download_job(job: Job, cfg: configparser.ConfigParser, download_dir: Path) -
         if protocol in {'ftps', 'ftp_tls', 'ftpes'}:
             ftp.prot_p()
         with local_path.open('wb') as handle:
-            ftp.retrbinary(f'RETR {remote_path}', handle.write)
+            try:
+                ftp.retrbinary(f'RETR {remote_path}', handle.write)
+            except ftplib.error_perm as exc:
+                if str(exc).startswith('550') and any(message in str(exc).lower() for message in ('no such file', 'not found', 'does not exist')):
+                    raise RemoteFileUnavailable(f'{job.gz_name}: remote file unavailable.') from exc
+                raise
     return local_path
 _DAT_TEXT_CACHE: dict[str, tuple[int, int, str]] = {}
 _DAT_TEXT_CACHE_MAX = 4
