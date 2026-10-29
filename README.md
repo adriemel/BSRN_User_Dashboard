@@ -73,3 +73,7 @@ The ZIP includes `QC_FLAGS.txt`, explaining the bit values 1, 2, 4, 8, 16 and 32
 Double-click **Start-BSRN-User-Dashboard.cmd** after `git pull`, then refresh any existing browser tab. The launcher checks the running server against the code on disk and restarts an outdated idle server while preserving saved sessions, outputs and downloads. It waits for you to finish an active batch before applying an update. On Windows, older servers are identified by their listening port and exact dashboard script path before being stopped. On other systems, an older server without the shutdown API must be stopped manually once.
 
 Refreshing the page alone can otherwise display new controls backed by an older server. The page now detects this mismatch and shows restart instructions instead of allowing unsupported New session or QC export requests.
+
+### Desktop icon
+
+`assets/icons/BSRN-User-Dashboard.ico` (16–256 px) can be used for a desktop shortcut or the repository folder on Windows. Shortcut: right-click **Start-BSRN-User-Dashboard.cmd** → **Send to → Desktop (create shortcut)**, then on the shortcut **Properties → Change Icon… → Browse**. Folder: **Properties → Customize → Change Icon…**; Windows stores this in a local `desktop.ini`, which Git ignores. `assets/icons/make_icons.py` regenerates the icon with Pillow from the bundled IBM Plex font (`python assets/icons/make_icons.py`).
