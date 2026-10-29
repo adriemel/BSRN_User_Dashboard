@@ -58,6 +58,8 @@ Run `python -B -m unittest discover -s tests -v` from this folder. The real-data
 
 Derived from the existing BSRN Dashboard; original license retained. Changes in this separate copy do not automatically propagate to the curator project.
 
+The BSRN logo and the icons derived from it (`web/bsrn-logo.png`, `web/favicon.png`, `assets/icons/*.ico`) are excluded from the GPL-3.0 licence. They identify the Baseline Surface Radiation Network (WRMC, hosted at AWI) and may not be used for other purposes without permission.
+
 ### Session controls
 
 Use **New session** to clear the dashboard and file selections for FTP or local input. Saved output files and verified download cache entries are retained. This control is disabled during active work. Unavailable and failed files appear in their own panel, with a link to the BSRN availability portal. Only explicit missing-file responses are classified as unavailable; other errors retain their details. The header links to the WRMC Curator. Bulk QC processes pending or failed jobs and disables when all loaded files have completed successfully; individual QC reports can still be regenerated.
