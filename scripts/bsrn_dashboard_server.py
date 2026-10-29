@@ -376,6 +376,8 @@ class Handler(BaseHTTPRequestHandler):
         if path in ('/', '/app.js', '/style.css'):
             name = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css'}[path]
             return self.send(200, (ROOT / 'web' / name).read_bytes(), mimetypes.guess_type(name)[0] + '; charset=utf-8')
+        if path in ('/bsrn-logo.png', '/favicon.png'):
+            return self.send(200, (ROOT / 'web' / path[1:]).read_bytes(), 'image/png')
         if path.startswith('/files/'):
             try:
                 target = safe_path(OUTPUT / 'runs', path[len('/files/runs/'):]) if path.startswith('/files/runs/') else None
