@@ -2,421 +2,505 @@
   {
     "id": 86,
     "code": "ABS",
-    "name": "Abashiri"
+    "name": "Abashiri",
+    "continent": "Asia"
   },
   {
     "id": 18,
     "code": "ALE",
-    "name": "Alert"
+    "name": "Alert",
+    "continent": "Arctic"
   },
   {
     "id": 1,
     "code": "ASP",
-    "name": "Alice Springs"
+    "name": "Alice Springs",
+    "continent": "Oceania"
   },
   {
     "id": 22,
     "code": "BAR",
-    "name": "Barrow"
+    "name": "Barrow",
+    "continent": "Arctic"
   },
   {
     "id": 24,
     "code": "BER",
-    "name": "Bermuda"
+    "name": "Bermuda",
+    "continent": "North America"
   },
   {
     "id": 28,
     "code": "BIL",
-    "name": "Billings"
+    "name": "Billings",
+    "continent": "North America"
   },
   {
     "id": 32,
     "code": "BON",
-    "name": "Bondville"
+    "name": "Bondville",
+    "continent": "North America"
   },
   {
     "id": 34,
     "code": "BOS",
-    "name": "Boulder, SURFRAD"
+    "name": "Boulder, SURFRAD",
+    "continent": "North America"
   },
   {
     "id": 23,
     "code": "BOU",
-    "name": "Boulder"
+    "name": "Boulder",
+    "continent": "North America"
   },
   {
     "id": 71,
     "code": "BRB",
-    "name": "Brazilia"
+    "name": "Brazilia",
+    "continent": "South America"
   },
   {
     "id": 14,
     "code": "BUD",
-    "name": "Budapest"
+    "name": "Budapest",
+    "continent": "Europe"
   },
   {
     "id": 53,
     "code": "CAB",
-    "name": "Cabauw"
+    "name": "Cabauw",
+    "continent": "Europe"
   },
   {
     "id": 50,
     "code": "CAM",
-    "name": "Camborne"
+    "name": "Camborne",
+    "continent": "Europe"
   },
   {
     "id": 15,
     "code": "CAP",
-    "name": "Cape Baranova"
+    "name": "Cape Baranova",
+    "continent": "Arctic"
   },
   {
     "id": 10,
     "code": "CAR",
-    "name": "Carpentras"
+    "name": "Carpentras",
+    "continent": "Europe"
   },
   {
     "id": 39,
     "code": "CLH",
-    "name": "Chesapeake Light"
+    "name": "Chesapeake Light",
+    "continent": "North America"
   },
   {
     "id": 45,
     "code": "CNR",
-    "name": "Cener"
+    "name": "Cener",
+    "continent": "Europe"
   },
   {
     "id": 47,
     "code": "COC",
-    "name": "Cocos Island"
+    "name": "Cocos Island",
+    "continent": "Oceania"
   },
   {
     "id": 85,
     "code": "CYL",
-    "name": "Cyl PROTEAS"
+    "name": "Cyl PROTEAS",
+    "continent": "Europe"
   },
   {
     "id": 40,
     "code": "DAA",
-    "name": "De Aar"
+    "name": "De Aar",
+    "continent": "Africa"
   },
   {
     "id": 2,
     "code": "DAR",
-    "name": "Darwin"
+    "name": "Darwin",
+    "continent": "Oceania"
   },
   {
     "id": 74,
     "code": "DOM",
-    "name": "Concordia Station"
+    "name": "Concordia Station",
+    "continent": "Antarctica"
   },
   {
     "id": 55,
     "code": "DON",
-    "name": "Dongsha Atoll"
+    "name": "Dongsha Atoll",
+    "continent": "Asia"
   },
   {
     "id": 35,
     "code": "DRA",
-    "name": "Desert Rock"
+    "name": "Desert Rock",
+    "continent": "North America"
   },
   {
     "id": 65,
     "code": "DWN",
-    "name": "Darwin Met Office"
+    "name": "Darwin Met Office",
+    "continent": "Oceania"
   },
   {
     "id": 27,
     "code": "E13",
-    "name": "Southern Great Plains"
+    "name": "Southern Great Plains",
+    "continent": "North America"
   },
   {
     "id": 77,
     "code": "ENA",
-    "name": "Eastern North Atlantic"
+    "name": "Eastern North Atlantic",
+    "continent": "Europe"
   },
   {
     "id": 19,
     "code": "EUR",
-    "name": "Eureka"
+    "name": "Eureka",
+    "continent": "Arctic"
   },
   {
     "id": 3,
     "code": "FLO",
-    "name": "Florianopolis"
+    "name": "Florianopolis",
+    "continent": "South America"
   },
   {
     "id": 31,
     "code": "FPE",
-    "name": "Fort Peck"
+    "name": "Fort Peck",
+    "continent": "North America"
   },
   {
     "id": 6,
     "code": "FUA",
-    "name": "Fukuoka"
+    "name": "Fukuoka",
+    "continent": "Asia"
   },
   {
     "id": 58,
     "code": "GAN",
-    "name": "Gandhinagar"
+    "name": "Gandhinagar",
+    "continent": "Asia"
   },
   {
     "id": 33,
     "code": "GCR",
-    "name": "Goodwin Creek"
+    "name": "Goodwin Creek",
+    "continent": "North America"
   },
   {
     "id": 78,
     "code": "GIM",
-    "name": "Granite Island"
+    "name": "Granite Island",
+    "continent": "North America"
   },
   {
     "id": 20,
     "code": "GOB",
-    "name": "Gobabeb"
+    "name": "Gobabeb",
+    "continent": "Africa"
   },
   {
     "id": 56,
     "code": "GUR",
-    "name": "Gurgaon"
+    "name": "Gurgaon",
+    "continent": "Asia"
   },
   {
     "id": 13,
     "code": "GVN",
-    "name": "Neumayer Station"
+    "name": "Neumayer Station",
+    "continent": "Antarctica"
   },
   {
     "id": 57,
     "code": "HOW",
-    "name": "Howrah"
+    "name": "Howrah",
+    "continent": "Asia"
   },
   {
     "id": 38,
     "code": "ILO",
-    "name": "Ilorin"
+    "name": "Ilorin",
+    "continent": "Africa"
   },
   {
     "id": 88,
     "code": "INO",
-    "name": "Magurele"
+    "name": "Magurele",
+    "continent": "Europe"
   },
   {
     "id": 7,
     "code": "ISH",
-    "name": "Ishigakijima"
+    "name": "Ishigakijima",
+    "continent": "Asia"
   },
   {
     "id": 61,
     "code": "IZA",
-    "name": "Iza\u00f1a"
+    "name": "Izaña",
+    "continent": "Europe"
   },
   {
     "id": 25,
     "code": "KWA",
-    "name": "Kwajalein"
+    "name": "Kwajalein",
+    "continent": "Oceania"
   },
   {
     "id": 60,
     "code": "LAU",
-    "name": "Lauder"
+    "name": "Lauder",
+    "continent": "Oceania"
   },
   {
     "id": 51,
     "code": "LER",
-    "name": "Lerwick"
+    "name": "Lerwick",
+    "continent": "Europe"
   },
   {
     "id": 12,
     "code": "LIN",
-    "name": "Lindenberg"
+    "name": "Lindenberg",
+    "continent": "Europe"
   },
   {
     "id": 54,
     "code": "LLN",
-    "name": "Lulin"
+    "name": "Lulin",
+    "continent": "Asia"
   },
   {
     "id": 90,
     "code": "LMP",
-    "name": "Lampedusa"
+    "name": "Lampedusa",
+    "continent": "Europe"
   },
   {
     "id": 49,
     "code": "LRC",
-    "name": "Langley Research Center"
+    "name": "Langley Research Center",
+    "continent": "North America"
   },
   {
     "id": 79,
     "code": "LYU",
-    "name": "Lanyu Island"
+    "name": "Lanyu Island",
+    "continent": "Asia"
   },
   {
     "id": 29,
     "code": "MAN",
-    "name": "Momote"
+    "name": "Momote",
+    "continent": "Oceania"
   },
   {
     "id": 87,
     "code": "MIN",
-    "name": "Mindelo"
+    "name": "Mindelo",
+    "continent": "Africa"
   },
   {
     "id": 8,
     "code": "MNM",
-    "name": "Minamitorishima"
+    "name": "Minamitorishima",
+    "continent": "Asia"
   },
   {
     "id": 30,
     "code": "NAU",
-    "name": "Nauru Island"
+    "name": "Nauru Island",
+    "continent": "Oceania"
   },
   {
     "id": 52,
     "code": "NEW",
-    "name": "Newcastle"
+    "name": "Newcastle",
+    "continent": "Oceania"
   },
   {
     "id": 11,
     "code": "NYA",
-    "name": "Ny-\u00c5lesund"
+    "name": "Ny-Ålesund",
+    "continent": "Arctic"
   },
   {
     "id": 80,
     "code": "OHY",
-    "name": "Observatory of Huancayo"
+    "name": "Observatory of Huancayo",
+    "continent": "South America"
   },
   {
     "id": 63,
     "code": "PAL",
-    "name": "Palaiseau"
+    "name": "Palaiseau",
+    "continent": "Europe"
   },
   {
     "id": 66,
     "code": "PAR",
-    "name": "Paramaribo"
+    "name": "Paramaribo",
+    "continent": "South America"
   },
   {
     "id": 21,
     "code": "PAY",
-    "name": "Payerne"
+    "name": "Payerne",
+    "continent": "Europe"
   },
   {
     "id": 76,
     "code": "PSA",
-    "name": "Plataforma Solar de Almeria"
+    "name": "Plataforma Solar de Almeria",
+    "continent": "Europe"
   },
   {
     "id": 36,
     "code": "PSU",
-    "name": "Rock Springs"
+    "name": "Rock Springs",
+    "continent": "North America"
   },
   {
     "id": 72,
     "code": "PTR",
-    "name": "Petrolina"
+    "name": "Petrolina",
+    "continent": "South America"
   },
   {
     "id": 5,
     "code": "REG",
-    "name": "Regina"
+    "name": "Regina",
+    "continent": "North America"
   },
   {
     "id": 94,
     "code": "QIQ",
-    "name": "Qiqihar"
+    "name": "Qiqihar",
+    "continent": "Asia"
   },
   {
     "id": 73,
     "code": "RLM",
-    "name": "Rolim de Moura"
+    "name": "Rolim de Moura",
+    "continent": "South America"
   },
   {
     "id": 82,
     "code": "RUN",
-    "name": "Reunion Island, University"
+    "name": "Reunion Island, University",
+    "continent": "Africa"
   },
   {
     "id": 4,
     "code": "SAP",
-    "name": "Sapporo"
+    "name": "Sapporo",
+    "continent": "Asia"
   },
   {
     "id": 43,
     "code": "SBO",
-    "name": "Sede Boqer"
+    "name": "Sede Boqer",
+    "continent": "Asia"
   },
   {
     "id": 83,
     "code": "SEL",
-    "name": "Selegua"
+    "name": "Selegua",
+    "continent": "North America"
   },
   {
     "id": 70,
     "code": "SMS",
-    "name": "S\u00e3o Martinho da Serra"
+    "name": "São Martinho da Serra",
+    "continent": "South America"
   },
   {
     "id": 75,
     "code": "SON",
-    "name": "Sonnblick"
+    "name": "Sonnblick",
+    "continent": "Europe"
   },
   {
     "id": 41,
     "code": "SOV",
-    "name": "Solar Village"
+    "name": "Solar Village",
+    "continent": "Asia"
   },
   {
     "id": 26,
     "code": "SPO",
-    "name": "South Pole"
+    "name": "South Pole",
+    "continent": "Antarctica"
   },
   {
     "id": 37,
     "code": "SXF",
-    "name": "Sioux Falls"
+    "name": "Sioux Falls",
+    "continent": "North America"
   },
   {
     "id": 17,
     "code": "SYO",
-    "name": "Syowa"
+    "name": "Syowa",
+    "continent": "Antarctica"
   },
   {
     "id": 42,
     "code": "TAM",
-    "name": "Tamanrasset"
+    "name": "Tamanrasset",
+    "continent": "Africa"
   },
   {
     "id": 16,
     "code": "TAT",
-    "name": "Tateno"
+    "name": "Tateno",
+    "continent": "Asia"
   },
   {
     "id": 48,
     "code": "TIK",
-    "name": "Tiksi"
+    "name": "Tiksi",
+    "continent": "Arctic"
   },
   {
     "id": 59,
     "code": "TIR",
-    "name": "Tiruvallur"
+    "name": "Tiruvallur",
+    "continent": "Asia"
   },
   {
     "id": 89,
     "code": "TNB",
-    "name": "Terra Nova Bay"
+    "name": "Terra Nova Bay",
+    "continent": "Antarctica"
   },
   {
     "id": 9,
     "code": "TOR",
-    "name": "Toravere"
+    "name": "Toravere",
+    "continent": "Europe"
   },
   {
     "id": 44,
     "code": "XIA",
-    "name": "Xianghe"
+    "name": "Xianghe",
+    "continent": "Asia"
   },
   {
     "id": 84,
     "code": "YUS",
-    "name": "Yushan"
+    "name": "Yushan",
+    "continent": "Asia"
   }
 ]

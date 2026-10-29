@@ -14,7 +14,7 @@ For a fresh checkout, install Python 3.10 or newer and run `python -m pip instal
 
 ## Get data
 
-- **FTP:** select one or more stations and a first/last month. The range is inclusive. Some station-months will not exist; a missing month is reported individually.
+- **FTP:** select one or more stations and a first/last month. Stations can be filtered by name, code or continent (Arctic stations north of the Arctic Circle form their own group); continents are stored in `config/stations.json`. The range is inclusive. Some station-months will not exist; a missing month is reported individually.
 - **Local:** place `.dat` files in this project's `input` folder, choose **Use input folder**, refresh the list, and select files. Subfolders are supported. Files are copied into the batch workspace before processing.
 - Loading creates a new batch without deleting previous batches. All batches remain under `output/runs`. The interface shows the latest batch after restart.
 

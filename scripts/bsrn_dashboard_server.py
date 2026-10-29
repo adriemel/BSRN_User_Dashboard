@@ -378,6 +378,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, (ROOT / 'web' / name).read_bytes(), mimetypes.guess_type(name)[0] + '; charset=utf-8')
         if path in ('/bsrn-logo.png', '/favicon.png'):
             return self.send(200, (ROOT / 'web' / path[1:]).read_bytes(), 'image/png')
+        if re.fullmatch(r'/fonts/plex-(sans|mono)-[4-7]00\.woff2', path) and (ROOT / 'web' / path[1:]).is_file():
+            return self.send(200, (ROOT / 'web' / path[1:]).read_bytes(), 'font/woff2')
         if path.startswith('/files/'):
             try:
                 target = safe_path(OUTPUT / 'runs', path[len('/files/runs/'):]) if path.startswith('/files/runs/') else None
