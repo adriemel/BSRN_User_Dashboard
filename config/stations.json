@@ -270,6 +270,12 @@
     "continent": "Europe"
   },
   {
+    "id": 91,
+    "code": "LIM",
+    "name": "Limassol",
+    "continent": "Europe"
+  },
+  {
     "id": 12,
     "code": "LIN",
     "name": "Lindenberg",
