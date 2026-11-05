@@ -108,12 +108,6 @@
     "continent": "Oceania"
   },
   {
-    "id": 85,
-    "code": "CYL",
-    "name": "Cyl PROTEAS",
-    "continent": "Europe"
-  },
-  {
     "id": 40,
     "code": "DAA",
     "name": "De Aar",
@@ -366,12 +360,6 @@
     "continent": "Europe"
   },
   {
-    "id": 76,
-    "code": "PSA",
-    "name": "Plataforma Solar de Almeria",
-    "continent": "Europe"
-  },
-  {
     "id": 36,
     "code": "PSU",
     "name": "Rock Springs",
@@ -484,12 +472,6 @@
     "code": "TIR",
     "name": "Tiruvallur",
     "continent": "Asia"
-  },
-  {
-    "id": 89,
-    "code": "TNB",
-    "name": "Terra Nova Bay",
-    "continent": "Antarctica"
   },
   {
     "id": 9,
