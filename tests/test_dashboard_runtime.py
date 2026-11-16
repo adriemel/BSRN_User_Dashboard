@@ -1,6 +1,10 @@
 import argparse
+import hashlib
+import sys
+import tempfile
 import unittest
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 from scripts import bsrn_launch_dashboard as launcher
 
@@ -49,6 +53,55 @@ class DashboardRuntimeTests(unittest.TestCase):
         for command in ['python.exe other.py', 'python.exe bsrn_dashboard_server.py',
                         f'python.exe "{launcher.SERVER_SCRIPT}.backup"']:
             self.assertFalse(launcher.legacy_process_matches({'Name': 'python.exe', 'CommandLine': command}))
+
+
+class EnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        (root / 'requirements.txt').write_text('numpy\n', encoding='utf-8')
+        patches = patch.multiple(launcher, PROJECT_ROOT=root, REQUIREMENTS=root / 'requirements.txt',
+                                 VENV_DIR=root / '.venv', VENV_MARKER=root / '.venv/.bsrn-requirements-sha256')
+        patches.start()
+        self.addCleanup(patches.stop)
+        self.root = root
+
+    def make_venv(self, marker):
+        python = launcher.venv_python()
+        python.parent.mkdir(parents=True)
+        python.write_text('', encoding='utf-8')
+        launcher.VENV_MARKER.write_text(marker, encoding='utf-8')
+        return python
+
+    def test_up_to_date_environment_is_reused_without_installing(self):
+        digest = hashlib.sha256((self.root / 'requirements.txt').read_bytes()).hexdigest()
+        python = self.make_venv(digest)
+        with patch.object(launcher.subprocess, 'run') as run:
+            self.assertEqual(launcher.ensure_environment(), str(python))
+            run.assert_not_called()
+
+    def test_changed_requirements_are_installed_and_recorded(self):
+        python = self.make_venv('outdated')
+        with patch.object(launcher.subprocess, 'run') as run:
+            run.return_value.returncode = 0
+            self.assertEqual(launcher.ensure_environment(), str(python))
+        self.assertEqual(run.call_args.args[0][:4], [str(python), '-m', 'pip', 'install'])
+        self.assertNotEqual(launcher.VENV_MARKER.read_text(encoding='utf-8').strip(), 'outdated')
+
+    def test_failed_install_is_reported_and_not_recorded(self):
+        self.make_venv('outdated')
+        with patch.object(launcher.subprocess, 'run') as run:
+            run.side_effect = [Mock(returncode=0), Mock(returncode=1)]  # pip present, install fails
+            with self.assertRaisesRegex(RuntimeError, 'Installing the required packages failed'):
+                launcher.ensure_environment()
+        self.assertEqual(launcher.VENV_MARKER.read_text(encoding='utf-8'), 'outdated')
+
+    def test_legacy_packages_directory_keeps_calling_python(self):
+        (self.root / '.packages').mkdir()
+        with patch.object(launcher.subprocess, 'run') as run:
+            self.assertEqual(launcher.ensure_environment(), sys.executable)
+            run.assert_not_called()
 
 
 if __name__ == '__main__':

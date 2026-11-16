@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import http.client
 import json
 import shlex
@@ -23,6 +24,52 @@ except ModuleNotFoundError:
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SERVER_SCRIPT = PROJECT_ROOT / "scripts" / "bsrn_dashboard_server.py"
 LOG_PATH = PROJECT_ROOT / "output" / "logs" / "dashboard_launcher_server.log"
+REQUIREMENTS = PROJECT_ROOT / "requirements.txt"
+VENV_DIR = PROJECT_ROOT / ".venv"
+VENV_MARKER = VENV_DIR / ".bsrn-requirements-sha256"
+MIN_PYTHON = (3, 10)
+
+
+def venv_python() -> Path:
+    return VENV_DIR / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+
+
+def ensure_environment() -> str:
+    """Return the Python that runs the server, installing requirements into .venv when needed.
+
+    A private virtual environment keeps the dashboard independent of system or
+    distribution packages (apt, conda, ...), which may be outdated or repackaged.
+    An existing .packages directory (legacy local setup) is used unchanged.
+    """
+    if (PROJECT_ROOT / ".packages").is_dir():
+        return sys.executable
+    if sys.version_info < MIN_PYTHON:
+        raise RuntimeError(f"Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer is required; "
+                           f"this is Python {sys.version.split()[0]}.")
+    if not REQUIREMENTS.is_file():
+        raise RuntimeError(f"Missing {REQUIREMENTS}. Restore it from the repository.")
+    wanted = hashlib.sha256(REQUIREMENTS.read_bytes()).hexdigest()
+    python = venv_python()
+    if python.is_file() and VENV_MARKER.is_file() and VENV_MARKER.read_text(encoding="utf-8").strip() == wanted:
+        return str(python)
+    has_pip = python.is_file() and subprocess.run(
+        [str(python), "-m", "pip", "--version"], capture_output=True).returncode == 0
+    if not has_pip:
+        print(f"Creating the dashboard's Python environment in {VENV_DIR} ...", flush=True)
+        # --clear only empties a missing or unusable .venv (no working pip).
+        created = subprocess.run([sys.executable, "-m", "venv", "--clear", str(VENV_DIR)])
+        if created.returncode != 0:
+            hint = (" On Debian/Ubuntu, run 'sudo apt install python3-venv' first."
+                    if sys.platform.startswith("linux") else "")
+            raise RuntimeError("Could not create the Python environment." + hint)
+    print("Installing the required Python packages (first start or after an update; needs internet) ...", flush=True)
+    installed = subprocess.run([str(python), "-m", "pip", "install", "--disable-pip-version-check",
+                                "-r", str(REQUIREMENTS)], cwd=PROJECT_ROOT)
+    if installed.returncode != 0:
+        raise RuntimeError("Installing the required packages failed. Check the internet connection "
+                           "and the pip messages above, then start the dashboard again.")
+    VENV_MARKER.write_text(wanted + "\n", encoding="utf-8")
+    return str(python)
 
 
 def api_request(host, port, path, *, token=None):
@@ -115,7 +162,7 @@ def dashboard_responds(host: str, port: int) -> bool:
             pass
 
 
-def start_server(host: str, port: int) -> subprocess.Popen:
+def start_server(host: str, port: int, python: str = sys.executable) -> subprocess.Popen:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     log_handle = LOG_PATH.open("a", encoding="utf-8", errors="replace")
     log_handle.write(f"\n--- starting dashboard server on {host}:{port} ---\n")
@@ -124,7 +171,7 @@ def start_server(host: str, port: int) -> subprocess.Popen:
     if sys.platform.startswith("win"):
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
     return subprocess.Popen(
-        [sys.executable, str(SERVER_SCRIPT), "--host", host, "--port", str(port)],
+        [python, str(SERVER_SCRIPT), "--host", host, "--port", str(port)],
         cwd=PROJECT_ROOT,
         stdout=log_handle,
         stderr=subprocess.STDOUT,
@@ -147,7 +194,8 @@ def launch_dashboard(args: argparse.Namespace) -> int:
     url = f"http://{args.host}:{args.port}/"
     try:
         if not ensure_current_server(args):
-            start_server(args.host, args.port)
+            python = sys.executable if args.no_venv else ensure_environment()
+            start_server(args.host, args.port, python)
             if not wait_for_server(args.host, args.port, args.timeout):
                 raise RuntimeError(f"Could not start BSRN dashboard at {url}. See {LOG_PATH}.")
     except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
@@ -165,6 +213,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--port", default=8766, type=int)
     parser.add_argument("--timeout", default=12.0, type=float)
     parser.add_argument("--no-open", action="store_true", help="Start/reuse the server but do not open a browser")
+    parser.add_argument("--no-venv", action="store_true",
+                        help="Run the server with this Python and its installed packages instead of the project's .venv")
     return parser
 
 
