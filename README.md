@@ -4,13 +4,21 @@ A local dashboard for downloading BSRN station-month files, exploring scientific
 Note that mass download of station-to-archive files with this Dashboard will take a while, so if you want to work with a lot of files you might want to download them separately and then use the "input" folder of the BSRN User Dashboard to load the files.
 
 ## Short instruction
-Clone the repo, change config/bsrn_workflow.ini.example to config/bsrn_workflow.ini and enter the login credentials you obtained from amelie.driemel@awi.de, then double click on **Start-BSRN-User-Dashboard.cmd** and start the work! :) Download station-to-archive files, QC them or export the data into tabular csv/tsv format. You need a working Python environment and the packages listed in requirements.txt
+Clone the repo, copy config/bsrn_workflow.ini.example to config/bsrn_workflow.ini and enter the login credentials you obtained from amelie.driemel@awi.de. Then start the dashboard: on Windows double click **Start-BSRN-User-Dashboard.cmd**, on Linux/macOS run `./Start-BSRN-User-Dashboard.sh` in a terminal. Download station-to-archive files, QC them or export the data into tabular csv/tsv format. You only need Python 3.10 or newer; the required packages are installed automatically on first start.
 
 ## Start
 
-Double-click **Start-BSRN-User-Dashboard.cmd**. The dashboard opens at **http://127.0.0.1:8766**. The BSRN curator dashboard is running on port 8765 and could theoretically be used in parallel.
+Windows: double-click **Start-BSRN-User-Dashboard.cmd**. Linux/macOS: run `./Start-BSRN-User-Dashboard.sh`. The dashboard opens at **http://127.0.0.1:8766**. The BSRN curator dashboard is running on port 8765 and could theoretically be used in parallel.
 
-For a fresh checkout, install Python 3.10 or newer and run `python -m pip install -r requirements.txt` from this folder. Start with the Windows launcher or `python scripts/bsrn_launch_dashboard.py`. The launcher can also use a locally available Codex Python runtime and `.packages` directory; neither is included in the repository. Do not copy binary dependencies between different Python versions or operating systems; install requirements instead.
+**Python packages are installed automatically.** On first start the launcher creates a private virtual environment in `.venv` inside this folder and installs the packages from `requirements.txt` into it (needs internet once, takes a minute or two). After a `git pull` that changes `requirements.txt` the environment is updated on the next start. Nothing is installed into your system Python, and system packages are not used. Please do not install the dependencies with `apt` (`python3-plotly` etc.) or other distribution package managers; these builds can be old or modified and are not tested with the dashboard.
+
+Requirements on a fresh machine:
+
+- **Windows:** Python 3.10 or newer from python.org (keep the "py launcher" option enabled).
+- **Debian/Ubuntu:** `sudo apt install python3 python3-venv`.
+- **Other Linux/macOS:** Python 3.10 or newer including the `venv` module.
+
+If the environment gets damaged, delete the `.venv` folder and start again. To use your own environment instead (e.g. conda), install `requirements.txt` there and run `python scripts/bsrn_launch_dashboard.py --no-venv`. If a `.packages` directory exists in this folder (legacy local setup), the launcher uses it with the calling Python and does not create `.venv`. Do not copy binary dependencies between different Python versions or operating systems.
 
 ## Get data
 
@@ -72,7 +80,7 @@ The ZIP includes `QC_FLAGS.txt`, explaining the bit values 1, 2, 4, 8, 16 and 32
 
 ### After pulling an update
 
-Double-click **Start-BSRN-User-Dashboard.cmd** after `git pull`, then refresh any existing browser tab. The launcher checks the running server against the code on disk and restarts an outdated idle server while preserving saved sessions, outputs and downloads. It waits for you to finish an active batch before applying an update. On Windows, older servers are identified by their listening port and exact dashboard script path before being stopped. On other systems, an older server without the shutdown API must be stopped manually once.
+Start the dashboard again with the launcher (**Start-BSRN-User-Dashboard.cmd** or `./Start-BSRN-User-Dashboard.sh`) after `git pull`, then refresh any existing browser tab. The launcher checks the running server against the code on disk and restarts an outdated idle server while preserving saved sessions, outputs and downloads. It waits for you to finish an active batch before applying an update. On Windows, older servers are identified by their listening port and exact dashboard script path before being stopped. On other systems, an older server without the shutdown API must be stopped manually once.
 
 Refreshing the page alone can otherwise display new controls backed by an older server. The page now detects this mismatch and shows restart instructions instead of allowing unsupported New session or QC export requests.
 

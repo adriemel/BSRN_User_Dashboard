@@ -1,5 +1,5 @@
-numpy
-pandas
-matplotlib
-Jinja2
-plotly
+numpy>=1.26
+pandas>=2.1
+matplotlib>=3.8
+Jinja2>=3.1
+plotly>=5.18
